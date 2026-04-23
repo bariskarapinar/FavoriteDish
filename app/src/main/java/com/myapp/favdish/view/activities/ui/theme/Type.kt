@@ -1,4 +1,4 @@
-package com.tutorials.eu.favdish.ui.theme
+package com.myapp.favdish.view.activities.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle

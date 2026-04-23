@@ -1,4 +1,4 @@
-package com.tutorials.eu.favdish
+package com.myapp.favdish.view.activities
 
 import android.content.Intent
 import android.os.Build
@@ -10,7 +10,8 @@ import android.view.WindowManager
 import android.view.animation.Animation
 import android.view.animation.AnimationUtils
 import androidx.appcompat.app.AppCompatActivity
-import com.tutorials.eu.favdish.databinding.ActivitySplashBinding
+import com.myapp.favdish.R
+import com.myapp.favdish.databinding.ActivitySplashBinding
 
 class SplashActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

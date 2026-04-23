@@ -1,4 +1,4 @@
-package com.tutorials.eu.favdish
+package com.myapp.favdish
 
 import org.junit.Test
 

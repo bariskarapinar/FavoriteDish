@@ -1,4 +1,4 @@
-package com.tutorials.eu.favdish.ui.notifications
+package com.myapp.favdish.viewmodel
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -8,16 +8,17 @@ import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
-import com.tutorials.eu.favdish.R
+import com.myapp.favdish.R
+import com.myapp.favdish.viewmodel.NotificationsViewModel
 
 class NotificationsFragment : Fragment() {
 
     private lateinit var notificationsViewModel: NotificationsViewModel
 
     override fun onCreateView(
-            inflater: LayoutInflater,
-            container: ViewGroup?,
-            savedInstanceState: Bundle?
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
     ): View? {
         notificationsViewModel =
                 ViewModelProvider(this).get(NotificationsViewModel::class.java)
