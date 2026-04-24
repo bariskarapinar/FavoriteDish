@@ -7,6 +7,7 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.os.Bundle
 import android.provider.MediaStore
+import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -100,9 +101,8 @@ class AddUpdateDishActivity : AppCompatActivity(), View.OnClickListener {
                 )
                 .withListener(object : PermissionListener {
                     override fun onPermissionGranted(p0: PermissionGrantedResponse?) {
-                        Toast.makeText(this@AddUpdateDishActivity,
-                            "You have storage permission",
-                            Toast.LENGTH_SHORT).show()
+                        val galleryIntent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+                        startActivityForResult(galleryIntent, GALLERY)
                     }
 
                     override fun onPermissionDenied(p0: PermissionDeniedResponse?) {
@@ -132,12 +132,19 @@ class AddUpdateDishActivity : AppCompatActivity(), View.OnClickListener {
                 data?.let {
                     val thumbNail : Bitmap = data.extras!!.get("data") as Bitmap
                     mBinding.ivDishImage.setImageBitmap(thumbNail)
-
                     mBinding.ivAddDishImage.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_vector_edit))
                 }
             }
+            else if (requestCode == GALLERY) {
+                data?.let {
+                    val selectedImage = data.data
+                    mBinding.ivDishImage.setImageURI(selectedImage)
+                    mBinding.ivAddDishImage.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_vector_edit))
+                }
+            }
+        } else if (resultCode == Activity.RESULT_CANCELED) {
+            Log.e("Request Cancelled", "Image selection cancelled")
         }
-
     }
 
     private fun showRationalDialogForPermissions() {
@@ -159,5 +166,6 @@ class AddUpdateDishActivity : AppCompatActivity(), View.OnClickListener {
 
     companion object {
         private const val CAMERA = 1
+        private const val GALLERY = 2
     }
 }
