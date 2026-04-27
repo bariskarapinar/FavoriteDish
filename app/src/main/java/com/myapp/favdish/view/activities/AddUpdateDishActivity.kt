@@ -3,16 +3,27 @@ package com.myapp.favdish.view.activities
 import android.Manifest
 import android.app.Activity
 import android.app.Dialog
+import android.content.Context
+import android.content.ContextWrapper
 import android.content.Intent
 import android.graphics.Bitmap
+import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
 import android.view.View
 import android.widget.Toast
+import androidx.annotation.Nullable
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.toBitmap
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.DataSource
+import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.load.engine.GlideException
+import com.bumptech.glide.request.RequestListener
+import com.bumptech.glide.request.target.Target
 import com.karumi.dexter.Dexter
 import com.karumi.dexter.MultiplePermissionsReport
 import com.karumi.dexter.PermissionToken
@@ -24,10 +35,16 @@ import com.karumi.dexter.listener.single.PermissionListener
 import com.myapp.favdish.R
 import com.myapp.favdish.databinding.ActivityAddUpdateDishBinding
 import com.myapp.favdish.databinding.DialogCustomImageSelectionBinding
+import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
+import java.io.OutputStream
+import java.util.*
 
 class AddUpdateDishActivity : AppCompatActivity(), View.OnClickListener {
 
     private lateinit var mBinding: ActivityAddUpdateDishBinding
+    private var mImagePath: String = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -42,6 +59,7 @@ class AddUpdateDishActivity : AppCompatActivity(), View.OnClickListener {
     private fun setupActionBar() {
         setSupportActionBar(mBinding.toolbarAddDishActivity)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        supportActionBar?.setHomeAsUpIndicator(R.drawable.ic_arrow_back)
         mBinding.toolbarAddDishActivity.setNavigationOnClickListener {
             onBackPressed()
         }
@@ -49,7 +67,7 @@ class AddUpdateDishActivity : AppCompatActivity(), View.OnClickListener {
 
     override fun onClick(p0: View?) {
         if (p0 != null) {
-            when (p0?.id) {
+            when (p0.id) {
                 R.id.iv_add_dish_image -> {
                     customImageSelectionDialog()
                     return
@@ -68,7 +86,6 @@ class AddUpdateDishActivity : AppCompatActivity(), View.OnClickListener {
 
             Dexter.withContext(this).withPermissions(
                 Manifest.permission.READ_EXTERNAL_STORAGE,
-                //Manifest.permission.WRITE_EXTERNAL_STORAGE,
                 Manifest.permission.CAMERA
             ).withListener(
                 object : MultiplePermissionsListener {
@@ -83,7 +100,7 @@ class AddUpdateDishActivity : AppCompatActivity(), View.OnClickListener {
                     }
 
                     override fun onPermissionRationaleShouldBeShown(
-                        permissions: List<PermissionRequest?>?,
+                        permissions: MutableList<PermissionRequest>?,
                         token: PermissionToken?
                     ) {
                         showRationalDialogForPermissions()
@@ -131,14 +148,52 @@ class AddUpdateDishActivity : AppCompatActivity(), View.OnClickListener {
             if (requestCode == CAMERA) {
                 data?.let {
                     val thumbNail : Bitmap = data.extras!!.get("data") as Bitmap
-                    mBinding.ivDishImage.setImageBitmap(thumbNail)
+                    
+                    Glide.with(this)
+                        .load(thumbNail)
+                        .centerCrop()
+                        .into(mBinding.ivDishImage)
+
+                    mImagePath = saveImageToInternalStorage(thumbNail)
+                    Log.i("ImagePath", mImagePath)
+
                     mBinding.ivAddDishImage.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_vector_edit))
                 }
             }
             else if (requestCode == GALLERY) {
                 data?.let {
                     val selectedImage = data.data
-                    mBinding.ivDishImage.setImageURI(selectedImage)
+                    
+                    Glide.with(this)
+                        .load(selectedImage)
+                        .centerCrop()
+                        .diskCacheStrategy(DiskCacheStrategy.ALL)
+                        .listener(object : RequestListener<Drawable> {
+                            override fun onLoadFailed(
+                                @Nullable e: GlideException?,
+                                model: Any?,
+                                target: Target<Drawable>?,
+                                isFirstResource: Boolean
+                            ): Boolean {
+                                Log.e("TAG", "Error loading image", e)
+                                return false
+                            }
+
+                            override fun onResourceReady(
+                                resource: Drawable,
+                                model: Any?,
+                                target: Target<Drawable>?,
+                                dataSource: DataSource?,
+                                isFirstResource: Boolean
+                            ): Boolean {
+                                val bitmap: Bitmap = resource.toBitmap()
+                                mImagePath = saveImageToInternalStorage(bitmap)
+                                Log.i("ImagePath", mImagePath)
+                                return false
+                            }
+                        })
+                        .into(mBinding.ivDishImage)
+
                     mBinding.ivAddDishImage.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_vector_edit))
                 }
             }
@@ -164,8 +219,25 @@ class AddUpdateDishActivity : AppCompatActivity(), View.OnClickListener {
             }.show()
     }
 
+    private fun saveImageToInternalStorage(bitmap: Bitmap): String {
+        val wrapper = ContextWrapper(applicationContext)
+        var file = wrapper.getDir(IMAGE_DIRECTORY, Context.MODE_PRIVATE)
+        file = File(file, "${UUID.randomUUID()}.jpg")
+
+        try {
+            val stream: OutputStream = FileOutputStream(file)
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream)
+            stream.flush()
+            stream.close()
+        } catch (e: IOException) {
+            e.printStackTrace()
+        }
+        return file.absolutePath
+    }
+
     companion object {
         private const val CAMERA = 1
         private const val GALLERY = 2
+        private const val IMAGE_DIRECTORY = "FavDishImages"
     }
 }
